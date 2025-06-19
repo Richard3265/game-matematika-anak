@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <title>Game Matematika Anak</title>
+  <style>
+    body {
+      font-family: 'Comic Sans MS', sans-serif;
+      background: linear-gradient(to bottom right, #fce4ec, #e1f5fe);
+      padding: 20px;
+      text-align: center;
+      color: #333;
+    }
+    h1 { font-size: 36px; color: #ec407a; }
+    #game, #result { display: none; margin-top: 20px; }
+    select, input[type="number"], button {
+      font-size: 18px;
+      padding: 10px;
+      border-radius: 10px;
+      margin: 10px;
+      border: none;
+    }
+    button {
+      background-color: #4caf50;
+      color: white;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #388e3c;
+    }
+    .question {
+      background: #fff;
+      padding: 10px;
+      margin: 10px auto;
+      width: 320px;
+      border-radius: 10px;
+      box-shadow: 2px 2px 5px rgba(0,0,0,0.1);
+    }
+    .correct { color: green; font-weight: bold; }
+    .wrong { color: red; font-weight: bold; }
+    #score { font-size: 22px; margin-bottom: 15px; }
+    .emoji { font-size: 40px; }
+    #timer {
+      font-size: 24px;
+      color: #d32f2f;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <h1>🧮 Game Matematika Anak</h1>
+  <p>Pilih tingkat kesulitan:</p>
+  <select id="mode">
+    <option value="easy">🍼 Mudah</option>
+    <option value="medium">🧠 Sedang</option>
+    <option value="hard">🧨 Sulit</option>
+  </select>
+  <br>
+  <button onclick="startGame()">Mulai Game</button>
+
+  <div id="timer">⏱️ Waktu: 60 detik</div>
+  <div id="game"></div>
+
+  <div id="result">
+    <h2>Hasil Belajar 📊</h2>
+    <div id="score"></div>
+    <div id="review"></div>
+    <button onclick="startGame()">Main Lagi 🔁</button>
+  </div>
+
+  <script>
+    let questions = [], userAnswers = [], timer, timeLeft = 60;
+
+    function getRandomInt(min, max) {
+      return Math.floor(Math.random() * (max - min + 1)) + min;
+    }
+
+    function generateExpression(mode) {
+      const nums = () => getRandomInt(1, 20);
+      const opsEasy = ['+', '-'];
+      const opsMedium = ['+', '-', '*'];
+      const opsHard = ['+', '-', '*', '/'];
+      const expressions = [];
+
+      for (let i = 0; i < 10; i++) {
+        let expr = "";
+        if (mode === "easy") {
+          let a = nums(), b = nums(), c = nums();
+          expr = `${a} + ${b} - ${c}`;
+        } else if (mode === "medium") {
+          let a = nums(), b = nums(), c = nums();
+          let op1 = opsMedium[getRandomInt(0, 2)];
+          let op2 = opsMedium[getRandomInt(0, 2)];
+          expr = `${a} ${op1} ${b} ${op2} ${c}`;
+        } else if (mode === "hard") {
+          let a = nums(), b = getRandomInt(1, 10), c = getRandomInt(1, 10);
+          let op1 = opsHard[getRandomInt(0, 3)];
+          let op2 = opsHard[getRandomInt(0, 3)];
+          if (op1 === '/' && b !== 0) a = a * b;
+          if (op2 === '/' && c !== 0) b = b * c;
+          expr = `${a} ${op1} ${b} ${op2} ${c}`;
+        }
+
+        expressions.push({
+          question: expr,
+          answer: Math.round(eval(expr.replace(/\/\s*0+/g, '/1')))
+        });
+      }
+
+      return expressions;
+    }
+
+    function startGame() {
+      clearInterval(timer);
+      document.getElementById("result").style.display = "none";
+      document.getElementById("game").style.display = "block";
+      questions = [], userAnswers = [];
+      timeLeft = 60;
+      document.getElementById("timer").innerText = `⏱️ Waktu: ${timeLeft} detik`;
+
+      const mode = document.getElementById("mode").value;
+      questions = generateExpression(mode);
+
+      showQuestions();
+      startTimer();
+    }
+
+    function showQuestions() {
+      const gameDiv = document.getElementById("game");
+      gameDiv.innerHTML = "";
+      questions.forEach((q, i) => {
+        gameDiv.innerHTML += `
+          <div class="question">
+            ${i + 1}. ${q.question} = 
+            <input type="number" id="answer${i}">
+          </div>`;
+      });
+      gameDiv.innerHTML += `<button onclick="submitAnswers()">Selesai ✅</button>`;
+    }
+
+    function submitAnswers() {
+      clearInterval(timer);
+      userAnswers = questions.map((_, i) =>
+        parseInt(document.getElementById(`answer${i}`).value));
+      showResult();
+    }
+
+    function showResult() {
+      const resultDiv = document.getElementById("result");
+      const scoreDiv = document.getElementById("score");
+      const reviewDiv = document.getElementById("review");
+
+      let correct = 0;
+      questions.forEach((q, i) => {
+        if (userAnswers[i] === q.answer) correct++;
+      });
+
+      let msg = "", emoji = "";
+      if (correct === 10) {
+        msg = "🎉 Selamat, anda pintar!";
+        emoji = "🧠✨";
+      } else if (correct >= 7) {
+        msg = "📚 Belajar lagi ya, jangan pacaran terus";
+        emoji = "😅";
+      } else {
+        msg = "😢 Tolol, bodoh, beban keluarga";
+        emoji = "💀";
+      }
+
+      scoreDiv.innerHTML = `${emoji}<br>Jawaban benar: <b>${correct}/10</b><br><b>${msg}</b>`;
+      reviewDiv.innerHTML = "";
+
+      questions.forEach((q, i) => {
+        const isCorrect = userAnswers[i] === q.answer;
+        reviewDiv.innerHTML += `
+          <div class="${isCorrect ? 'correct' : 'wrong'}">
+            ${i + 1}. ${q.question} = ${userAnswers[i]} 
+            ${isCorrect ? "✓" : `✗ (Benar: ${q.answer})`}
+          </div>`;
+      });
+
+      document.getElementById("game").style.display = "none";
+      resultDiv.style.display = "block";
+    }
+
+    function startTimer() {
+      timer = setInterval(() => {
+        timeLeft--;
+        document.getElementById("timer").innerText = `⏱️ Waktu: ${timeLeft} detik`;
+        if (timeLeft <= 0) {
+          clearInterval(timer);
+          alert("⏰ Waktu habis!");
+          submitAnswers();
+        }
+      }, 1000);
+    }
+  </script>
+</body>
+</html>
