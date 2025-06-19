@@ -2,23 +2,34 @@
 <html lang="id">
 <head>
   <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Game Matematika Anak</title>
   <style>
+    :root {
+      --font-size: 18px;
+      --button-size: 16px;
+    }
     body {
-      font-family: 'Comic Sans MS', sans-serif;
+      font-family: 'Comic Sans MS', cursive, sans-serif;
       background: linear-gradient(to bottom right, #fce4ec, #e1f5fe);
       padding: 20px;
       text-align: center;
       color: #333;
+      margin: 0;
     }
-    h1 { font-size: 36px; color: #ec407a; }
-    #game, #result { display: none; margin-top: 20px; }
+    h1 {
+      color: #ec407a;
+      margin-top: 20px;
+      font-size: 2.5em;
+    }
     select, input[type="number"], button {
-      font-size: 18px;
+      font-size: var(--font-size);
       padding: 10px;
       border-radius: 10px;
-      margin: 10px;
+      margin: 10px auto;
       border: none;
+      width: 80%;
+      max-width: 400px;
     }
     button {
       background-color: #4caf50;
@@ -30,32 +41,86 @@
     }
     .question {
       background: #fff;
-      padding: 10px;
+      padding: 15px;
       margin: 10px auto;
-      width: 320px;
+      width: 90%;
+      max-width: 400px;
       border-radius: 10px;
       box-shadow: 2px 2px 5px rgba(0,0,0,0.1);
+      font-size: var(--font-size);
     }
     .correct { color: green; font-weight: bold; }
     .wrong { color: red; font-weight: bold; }
-    #score { font-size: 22px; margin-bottom: 15px; }
-    .emoji { font-size: 40px; }
+    #score {
+      font-size: var(--font-size);
+      margin-bottom: 15px;
+    }
     #timer {
-      font-size: 24px;
+      font-size: 1.5em;
       color: #d32f2f;
       font-weight: bold;
+    }
+    #popup {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background-color: rgba(0,0,0,0.6);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 999;
+    }
+    #popup-content {
+      background: white;
+      padding: 20px;
+      border-radius: 20px;
+      text-align: center;
+      width: 85%;
+      max-width: 350px;
+      font-size: var(--font-size);
+      box-shadow: 0 0 10px rgba(0,0,0,0.3);
+    }
+    #popup-content img {
+      width: 150px;
+      height: auto;
+      border-radius: 15px;
+      margin-bottom: 10px;
+    }
+    #popup-content button {
+      margin-top: 10px;
+      padding: 10px 20px;
+      font-size: var(--button-size);
+      border: none;
+      background-color: #4caf50;
+      color: white;
+      border-radius: 10px;
+      cursor: pointer;
+    }
+    @media (max-width: 768px) {
+      :root {
+        --font-size: 5vw;
+        --button-size: 5vw;
+      }
+      h1 { font-size: 6vw; }
+      #timer { font-size: 6vw; }
+    }
+    @media (min-width: 1025px) {
+      h1 { font-size: 36px; }
+      select, input[type="number"], button, .question { font-size: 18px; }
+      #popup-content { font-size: 18px; }
+      #popup-content button { font-size: 16px; }
+      #timer { font-size: 24px; }
     }
   </style>
 </head>
 <body>
   <h1>🧮 Game Matematika Anak</h1>
-  <p>Pilih tingkat kesulitan:</p>
+  <p style="font-size: 1.2em;">Pilih tingkat kesulitan:</p>
   <select id="mode">
     <option value="easy">🍼 Mudah</option>
     <option value="medium">🧠 Sedang</option>
     <option value="hard">🧨 Sulit</option>
-  </select>
-  <br>
+  </select><br>
   <button onclick="startGame()">Mulai Game</button>
 
   <div id="timer">⏱️ Waktu: 60 detik</div>
@@ -68,20 +133,24 @@
     <button onclick="startGame()">Main Lagi 🔁</button>
   </div>
 
+  <!-- Pop-up Modal -->
+  <div id="popup">
+    <div id="popup-content">
+      <img id="popup-image" src="" alt="Karakter">
+      <div id="popup-message"></div><br>
+      <button onclick="closePopup()">Tutup</button>
+    </div>
+  </div>
+
   <script>
     let questions = [], userAnswers = [], timer, timeLeft = 60;
-
     function getRandomInt(min, max) {
       return Math.floor(Math.random() * (max - min + 1)) + min;
     }
-
     function generateExpression(mode) {
       const nums = () => getRandomInt(1, 20);
-      const opsEasy = ['+', '-'];
-      const opsMedium = ['+', '-', '*'];
-      const opsHard = ['+', '-', '*', '/'];
+      const opsEasy = ['+', '-'], opsMedium = ['+', '-', '*'], opsHard = ['+', '-', '*', '/'];
       const expressions = [];
-
       for (let i = 0; i < 10; i++) {
         let expr = "";
         if (mode === "easy") {
@@ -92,24 +161,17 @@
           let op1 = opsMedium[getRandomInt(0, 2)];
           let op2 = opsMedium[getRandomInt(0, 2)];
           expr = `${a} ${op1} ${b} ${op2} ${c}`;
-        } else if (mode === "hard") {
+        } else {
           let a = nums(), b = getRandomInt(1, 10), c = getRandomInt(1, 10);
-          let op1 = opsHard[getRandomInt(0, 3)];
-          let op2 = opsHard[getRandomInt(0, 3)];
+          let op1 = opsHard[getRandomInt(0, 3)], op2 = opsHard[getRandomInt(0, 3)];
           if (op1 === '/' && b !== 0) a = a * b;
           if (op2 === '/' && c !== 0) b = b * c;
           expr = `${a} ${op1} ${b} ${op2} ${c}`;
         }
-
-        expressions.push({
-          question: expr,
-          answer: Math.round(eval(expr.replace(/\/\s*0+/g, '/1')))
-        });
+        expressions.push({ question: expr, answer: Math.round(eval(expr.replace(/\/\s*0+/g, '/1'))) });
       }
-
       return expressions;
     }
-
     function startGame() {
       clearInterval(timer);
       document.getElementById("result").style.display = "none";
@@ -117,72 +179,50 @@
       questions = [], userAnswers = [];
       timeLeft = 60;
       document.getElementById("timer").innerText = `⏱️ Waktu: ${timeLeft} detik`;
-
       const mode = document.getElementById("mode").value;
       questions = generateExpression(mode);
-
       showQuestions();
       startTimer();
     }
-
     function showQuestions() {
       const gameDiv = document.getElementById("game");
       gameDiv.innerHTML = "";
       questions.forEach((q, i) => {
-        gameDiv.innerHTML += `
-          <div class="question">
-            ${i + 1}. ${q.question} = 
-            <input type="number" id="answer${i}">
-          </div>`;
+        gameDiv.innerHTML += `<div class="question">${i + 1}. ${q.question} = <input type="number" id="answer${i}"></div>`;
       });
       gameDiv.innerHTML += `<button onclick="submitAnswers()">Selesai ✅</button>`;
     }
-
     function submitAnswers() {
       clearInterval(timer);
-      userAnswers = questions.map((_, i) =>
-        parseInt(document.getElementById(`answer${i}`).value));
+      userAnswers = questions.map((_, i) => parseInt(document.getElementById(`answer${i}`).value));
       showResult();
     }
-
     function showResult() {
-      const resultDiv = document.getElementById("result");
       const scoreDiv = document.getElementById("score");
       const reviewDiv = document.getElementById("review");
-
       let correct = 0;
-      questions.forEach((q, i) => {
-        if (userAnswers[i] === q.answer) correct++;
-      });
-
-      let msg = "", emoji = "";
+      questions.forEach((q, i) => { if (userAnswers[i] === q.answer) correct++; });
+      let msg = "", emoji = "", imageUrl = "";
       if (correct === 10) {
-        msg = "🎉 Selamat, anda pintar!";
-        emoji = "🧠✨";
+        msg = "🎉 Selamat, anda pintar!"; emoji = "🧠✨";
+        imageUrl = "https://raw.githubusercontent.com/richard3265/game-assets/main/pintar.png";
       } else if (correct >= 7) {
-        msg = "📚 Belajar lagi ya, jangan pacaran terus";
-        emoji = "😅";
+        msg = "📚 Belajar lagi ya, jangan pacaran terus"; emoji = "😅";
+        imageUrl = "https://raw.githubusercontent.com/richard3265/game-assets/main/semangat.png";
       } else {
-        msg = "😢 Tolol, bodoh, beban keluarga";
-        emoji = "💀";
+        msg = "😢 Tolol, bodoh, beban keluarga"; emoji = "💀";
+        imageUrl = "https://raw.githubusercontent.com/richard3265/game-assets/main/sedih.png";
       }
-
-      scoreDiv.innerHTML = `${emoji}<br>Jawaban benar: <b>${correct}/10</b><br><b>${msg}</b>`;
+      scoreDiv.innerHTML = `Jawaban benar: <b>${correct}/10</b>`;
       reviewDiv.innerHTML = "";
-
       questions.forEach((q, i) => {
         const isCorrect = userAnswers[i] === q.answer;
-        reviewDiv.innerHTML += `
-          <div class="${isCorrect ? 'correct' : 'wrong'}">
-            ${i + 1}. ${q.question} = ${userAnswers[i]} 
-            ${isCorrect ? "✓" : `✗ (Benar: ${q.answer})`}
-          </div>`;
+        reviewDiv.innerHTML += `<div class="${isCorrect ? 'correct' : 'wrong'}">${i + 1}. ${q.question} = ${userAnswers[i]} ${isCorrect ? "✓" : `✗ (Benar: ${q.answer})`}</div>`;
       });
-
+      showPopup(`${emoji}<br><b>${msg}</b>`, imageUrl);
       document.getElementById("game").style.display = "none";
-      resultDiv.style.display = "block";
+      document.getElementById("result").style.display = "block";
     }
-
     function startTimer() {
       timer = setInterval(() => {
         timeLeft--;
@@ -193,6 +233,14 @@
           submitAnswers();
         }
       }, 1000);
+    }
+    function showPopup(message, imageUrl) {
+      document.getElementById("popup-message").innerHTML = message;
+      document.getElementById("popup-image").src = imageUrl;
+      document.getElementById("popup").style.display = "flex";
+    }
+    function closePopup() {
+      document.getElementById("popup").style.display = "none";
     }
   </script>
 </body>
